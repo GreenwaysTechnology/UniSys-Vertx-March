@@ -1,0 +1,1273 @@
+
+
+Vert.X:
+
+Vert.X Tech Stack:
+..................
+
+What is Java?
+
+Object Oriented Programming
+Functional Style/ pure Programming
+
+Concurrency:
+   1.Multi threading
+   2.Event loop
+     -Async Programming/Nonblocking
+
+Reactive Programming
+
+MicroServices
+  Plain MicroServices apps
+  Reactive Microservice 
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Java :
+
+   Technology, to build applications which is portable across multiple os.
+
+How to build portable(Platform independent) Applications?
+   JVM -  Java Virtual Machine
+
+JVM
+ VM - Virtual Machine
+
+JVM APPLICATION VM,Which represents os abstraction.
+
+Hard Virtualzation :Virtualize hardwares
+
+On single os(Host),You can run many other os(Oracle VM)
+
+Containerzation : How to build light weight VMs
+ ->Docker
+////////////////////////////////////////////////////////////////////////////////////////////
+
+JVM internal architectures:
+.........................
+ JVM is c Program - java.c(source code)
+   Binary Image :
+   on windows : java.exe
+
+Types of Programs:
+
+1.Passive
+   Programm which is hard disk.
+   Programm which is not loaded on RAM
+   Programm which is not accessed by CPU. 
+2.Active 
+  Program which is ram 
+  Program which is accessed by CPU.
+
+Note:
+  Active Program we call "Process".
+  Program in execution
+  Program in Main Memory.
+ 
+
+Any Program which is in RAM  has "Layout/Structure".
+
+
+if you run program on another program
+ eg : on jvm , running java program. ----->Sub Process / Thread.
+
+
+Heap:
+  The place where you can allocate memory for running programs.
+   Active memory:
+
+ Objects : active memory of class.=>new Class()=Active Memory
+
+
+
+class OrderService{
+
+ int orderId;
+
+ public void placeOrder(){
+
+ }
+
+}
+OrderService orderService=new OrderService()
+orderService.placeOrder();
+or.save()
+
+You can run only one frame at the same time on single cpu.
+
+stack frame /frame is other wise called as "thread".
+
+
+Every Process uses "Multi frame architecture" - Multi threaded architecture.
+
+
+Fundamental idea of webserver:
+
+1.each client request is treated as "single Thread"
+2.Web server creates thread,manages the life cycle of thread.
+
+
+
+Evils of "Process Level Multi Threading":
+
+1.Resource allocation : memory manangement
+2.Dead Lock
+3.Starvation
+4.Race conditions
+
+Solution to Process level multi threading;
+..........................................''
+
+Worker Level multi threading. 
+
+Objective:
+
+  Dont create,manage threads at Process level rather than "Delegate to OS Kernals"
+
+ This is called as 
+
+     "Non Blocking"
+     "Async Programming"
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Java and Async Programming:
+............................
+   What if jvm supports non-blocking,evented concurrency?
+
+
+Java 7 called Dolphin
+
+   Dolphin  introduced  experimental model for building fast  disk IO, called “NIO” – NonBlocking IO when compare to traditional IO.
+
+
+That was beginning
+      Due to low support  from Java, only DISK IO was implemented
+Later it was improved, added TCP/IP IO was implemented 
+ But it is still Not “Reactor Pattern Model”
+
+
+
+Birth of Open Source Projects 
+	to solve NON Blocking IO On JVM
+
+NETTY
+
+ "Netty is a NIO client server framework which enables quick and easy development of network applications such as protocol servers and clients. "
+
+It greatly simplifies and streamlines network programming such as TCP and UDP socket server.
+
+Unified API for various transport types - blocking and non-blocking socket
+
+Based on a flexible and extensible event model which allows clear separation of concerns
+
+
+ 		      Netty
+		         |
+          	      nettycore
+			 |
+			nio
+			 |
+		        jvm
+
+Netty project provides:
+1.nio only for disk io but netty provided more io like
+   tcp/ip,sockets,udp,http
+  non blocking
+ netty uses "Reactor Model" internnaly
+
+
+
+Apache MINA 
+
+  Apache MINA is a network application framework which helps users develop high performance and high scalability network applications easily.
+ It provides an abstract event-driven asynchronous API over various transports such as TCP/IP and 
+
+UDP/IP via Java NIO.
+NIO framework library,
+client server framework library, or
+a networking socket library
+
+
+
+ 		    Apache MINA 
+		         |
+          	      Minaapi
+			 |
+			nio
+			 |
+		        jvm
+
+
+Vertx:
+
+
+Birth of Vertx Project
+
+Vertx was born to simulate Node.js Capability on JVM. initally it was named "Node.X"
+
+A core project, called vertx-core, provides the APIs for asynchronous programming, non-blocking I/O, streaming, and convenient access to networked protocols such as TCP, UDP, DNS, HTTP or Web Sockets,
+
+Vertx is industry ready , polyglot toolkit for building Non blocking,async,evented io applications.
+
+Vertx has been built on the top of Netty Core.
+
+			
+			VertxApplication
+			      |
+			Vertx Core Runtime
+			      |
+			   Netty Core
+			      |
+			     NIO
+			      |
+			     JVM
+
+
+NonBlocking IO Apis
+
+
+                     NonBlocking IO Application
+   --------------------------------------------------------------------		
+    Vertx-FS  Vertx-TCP/IP  Vertx-UDP Vertx-HTTP Vertx-HTTPS Vertx-SMTP .....
+  ---------------------------------------------------------------------
+			      |
+			Vertx Core Runtime
+			      |
+			   Netty Core
+			      |
+			     NIO
+			      |
+			     JVM
+
+
+
+Vert-x is poly glot:
+
+ Vertx is java technology platform, Vertx runs on JVM.
+ Fundamentally JVM supports multiple language as JVM Spec dt 2003.
+
+
+             Java PL  Groovy Kotlin  Javascript  scala Ruby
+		|       |     |         |         |     |
+      -------------------------------------------------------------
+                               .class
+				 |
+   --------------------------------------------------------------------		
+       Vertx-FS  Vertx-TCP/IP  Vertx-UDP Vertx-HTTP Vertx-HTTPS Vertx-SMTP .....
+  ---------------------------------------------------------------------
+			      |
+			Vertx Core Runtime
+			      |
+			   Netty Core
+			      |
+			     NIO
+			      |
+			     JVM
+                                
+          
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Dont call us,we will call you ----- Event Driven programming
+
+
+
+Req : to read database records
+
+  Client----req -----Vertx---|---delegate db operations--db
+
+					db operations done
+					<--inform vertx 
+				callbackFunctions---result
+
+
+
+
+Vertx Tech Stack
+  Build async,non blocking Apps
+
+Spring is collection of projects called modules
+  like core,data,mvc,integration,microservice.............
+
+Like Spring Vertx is also collection projects
+
+Vertx-core
+vertx-web
+Vertx-Data
+Vertx-Reactive Extension
+Vertx-Microservices
+Vertx-Messaging
+Vertx-Security
+Vertx-Integration
+Vertx-Devops Engineering
+Vertx-Testing
+Vertx-Clusters
+Vertx-Services
+Vertx-Cloud
+
+Vertx-Core:
+
+Writing TCP clients and servers
+Writing HTTP clients and servers including support for WebSockets
+The Event bus
+Shared data - local maps and clustered distributed maps
+Periodic and delayed actions
+Deploying and undeploying Verticles
+Datagram Sockets
+DNS client
+File system access
+High availability
+Native transports
+Clustering   
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+Does Vertx 100% NonBlocking Platform?
+  Yes!, some of the API in Vertx is blocking  , particullary fs apis.
+
+
+Vertx has event loop which is broker between processing unit and clients.
+
+How many event loops available on vertx when compare to Node.js?
+
+ Node has single event loop per instance.
+
+But Vertx has many event many event loops , Per CPU 2 event loops.
+
+           So that we can call "Mutli Core Reactor Pattern"
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+Programming with Vertx:
+........................
+
+Vertx supports many programming languages. Each Programming pl has its own paradigm.
+
+Vertx supports many paradigm:
+
+1.Object Oriented Programming.
+
+1.Abstraction
+2.Encapsulation
+3.Modularity
+4.Typing
+5.Hierachy
+6.Conncurency
+ 7.Persistency
+
+2.Functional Programming
+3.Event Driven Programming
+4.Reactive Programming
+5.Actor Model driven Programming
+
+
+Java PL 
+  java is object oriented,functional style programming language.
+
+When you select java in vertx.
+
+ java + oo + functional + event driven + actor model + reactive
+
+When you select javascript in vertx.
+
+  javascript is object based,functional style,event driven pl.
+
+pure vs style:
+
+ if a language implements all principles then can be certified pure
+ if not then "style"/"based"
+
+ java is pure oo, functional style.
+//////////////////////////////////////////////////////////////////////////////////////
+
+java supports functional style programming principles from java 8 on wards.
+
+In Vertx, programming building blocks are functional style.
+
+.............................................................................................
+
+Functional Programming principles  and implementation:
+......................................................
+
+1.Purly functional
+  The language implements functional programming paradgims fully.
+2.Functional style.
+  The language partially implements functional programming concepts.
+
+
+
+Functional programming is style of programming which modeled from Mathmetical concepts
+
+
+History:
+
+ Alonzo Church Proposed a model called "functions" to implement "computation model"
+ where a Alan turing proposed a model called "State" machine.
+ Church is phd student under alan turing.
+
+
+Most of the functional and functional style lanaguages follows Chruch model called      
+"Lambda Calculs"
+
+Programming languages which implements lambda calculs:
+ Haskell, JavaScript, Scala, Erlang, Lisp, ML, Clojure, OCaml, Common Lisp, Racket,Java 8,9,11,12.
+
+Java 8 implements Lambda Calculs.
+
+In lambda calculs we form program using function composition.
+
+Object composition
+  -we pass object to functions/methods
+  -we create object in functions/methods
+  -we return object from functions/methods
+
+Function Composition:
+ -we pass function to another functions as parameter
+ -we create function in functions -nested function /closure
+ -we return function from functions -
+
+
+
+Principles of Functional Programming:
+
+
+
+1.Pure functions
+2.Recursion
+3.Referential transparency
+4.Functions are First-Class and can be Higher-Order
+5.Variables are Immutable
+
+
+1.Pure functions:
+...............
+  A. First, they always produce the same output for same arguments irrespective of 
+   anything else.
+
+  B. They have no side-effects.
+      There are no statements or instructions, only expressions which cannot mutate variables (local or global) nor access state
+
+
+   A.
+   function  getStock(value){
+
+        return value
+   }
+
+  getStock(10)=>10
+
+
+  B. what if i have input , which need to be computed ,how to employ pure function?
+ 
+   function updateCity(city,profile){
+
+
+  }
+
+ here city is value, profile is object to be updated
+
+
+ String str="hello".trim()=>new Object.toUpperCase()=>new Object.operation().api().api().api()...... 
+
+  based on builder/command chain pattern,
+
+ In vertx we call "Fluent" api=>Pure function based
+
+
+
+Functions are First-Class and can be Higher-Order:
+-------------------------------------------------
+ 
+  function test(callback){
+
+    return function(){
+
+   }
+ }
+
+ test(function(){});
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+Programming Approch:
+
+1.imperative
+
+ -"tell what to do and also how to do it"
+ -It uses statements
+    ->collection of statments form program
+    ->Each statement is executed in Sequence
+    ->When each statement is executed which changes/mutate the state of machine(data/memory           location)
+Impertive style programming based on "Alan turing State Machine"
+
+
+Problem Statement:
+ 
+   List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ 
+  -find the total of double of even numbers
+
+Problem Statement:
+ 
+   List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+ 
+  -find the total of double of even numbers
+
+import java.util.Arrays;
+import java.util.List;
+
+public class StateMutationImperative {
+	public static void main(String[] args) {
+
+		List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+		// find the total of double of even numbers
+		int result = 0; // local state
+
+		for (int e : numbers) {
+			if (e % 2 == 0) { //
+				result += e * 2; //mutate/update the state
+			}
+		}
+
+		System.out.println(result);
+	}
+
+}
+
+
+
+
+ List<String> names = Arrays.asList("Dory", "Gill", "Bruce", "Nemo", "Darla", "Marlin", "Jacques");
+ 
+Problem statement : find Nemo.
+
+  List<String> names = Arrays.asList("Dory", "Gill", "Bruce", "Nemo", "Darla", "Marlin", "Jacques");
+
+		// imperative
+		boolean found = false;
+
+		// using for loop
+
+		for (int i = 0; i < names.size(); i++) {
+			if (names.get(i).equals("Nemo")) {
+				found = true;
+				break;
+			}
+		}
+
+		//for each
+		for (String name : names) {
+			if (name.equals("Nemo")) {
+				found = true;
+				break;
+			}
+		}
+		if (found)
+			System.out.println("Nemo found");
+		else
+			System.out.println("Nemo not found");
+		//
+		 
+	}
+
+    
+
+
+Problems with impertive programming:
+
+1.developer may apply different alogrthim to get results.
+2.this code may lead bugs
+3.this code may lead peformance issues
+4.we cant acheive common code practice regarding biz logics
+5.So complex to maintain,read
+6.Scallablity is very less
+
+declarative: 
+ tell what to do and *not* how to do it
+
+
+Simple declarative: without functional programming
+
+
+ List<String> names = Arrays.asList("Dory", "Gill", "Bruce", "Nemo", "Darla", "Marlin", "Jacques");
+
+// declative
+if (names.contains("Nemo"))
+ System.out.println("Nemo found");
+else
+ System.out.println("Nemo not found");
+
+2.declartive
+
+
+ List<String> names = Arrays.asList("Dory", "Gill", "Bruce", "Nemo", "Darla", "Marlin", "Jacques");
+
+ tell what to do and *not* how to do it
+
+ names.filter(name=>name.equals("Nemo"))=>new Filtered List
+
+numbers.filter(n=>n%2==0).map(n=>n*2).collect()
+
+
+declarative is application of functional programming : functional composition,Pure function.
+
+Vertx recommends functional style programming only.
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Implementation of functional programming extension in java:Lambda Calculs Implementation:
+
+Language: Java 8,9
+
+Functional Interfaces:
+
+To implement lambda calculs, java provides interface having single abstract method called
+"SAM".
+
+A functional interface is an interface that contains only one abstract method.
+
+They can have only one functionality to exhibit. : Single Responsbility Principle
+
+lambda expressions can be used to represent the instance of a functional interface
+
+Inner classes :
+
+1.Regular Inner Classes 
+2.Method-local Inner Classes
+3.Anonymous Inner Classes
+4.Static Nested Classes.
+ 
+    "Lamda expressions are implemented with help of innerclasses behind the scenes"
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+interface vs classes when to use?
+
+interface for different famaily of classes, where as classes are used only one family
+
+
+Use case : how to write functional programming : using interfaces.
+
+package com.unisys.fp;
+
+interface Greeter {
+	String greet();
+}
+
+//how to implement Greeter interface?
+
+//Way -1 : declaring class which implements Greeter
+class GreeterImpl implements Greeter {
+
+	public String greet() {
+		// TODO Auto-generated method stub
+		return "Hello";
+	}
+
+}
+
+public class GreeterImplMain {
+	public static void main(String[] args) {
+		Greeter g = new GreeterImpl();
+		System.out.println(g.greet());
+
+		// way 2:
+		Greeter welcome = new Greeter() {
+
+			public String greet() {
+				// TODO Auto-generated method stub
+				return "Welcome";
+			}
+		};
+		System.out.println(welcome.greet());
+
+		Runnable runnable = new Runnable() {
+
+			public void run() {
+				// TODO Auto-generated method stub
+				System.out.println(Thread.currentThread().getName());
+			}
+		};
+		Thread thread = new Thread(runnable);
+		thread.start();
+
+		// Way 3 : Java 8 functional Programming Style
+
+		Greeter mygreeter = () -> {
+			return "Hello Lambda";
+		};
+		System.out.println(mygreeter.greet());
+
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+Lambda Expression rules:
+
+if you want to functional programming, java applies rules to make interface is functional.
+
+1. interface must have only one method declaration : SAM : SRP
+
+@FunctionalInterface
+interface Welcome {
+	void sayHello();
+}
+
+if you declare one method inside interfaces which becomes functional funciton but we must enable standards by using annotation.
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Welcome {
+	void sayWelcome();
+}
+
+public class WelcomeFunctionalInterface {
+	public static void main(String[] args) {
+
+		Welcome welcome = () -> {
+			System.out.println("SayHello");
+		};
+		welcome.sayWelcome();
+
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Code Refactoring:
+
+
+Use case 1: if the lambda function contains only one line of code
+
+//Use case 2 : if function having only one line of code.
+		 //drop {}
+		welcome = ()->System.out.println("SayHello");
+		welcome.sayWelcome();
+
+
+Args and Parameters:
+....................
+
+ void add(int a){
+
+
+ }
+ add(10)
+ //10 params
+ //a args
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Stock {
+	void getValue(int a);
+}
+
+public class ParamsAndArgs {
+	public static void main(String[] args) {
+
+		Stock stock = null;
+
+		//args
+		stock = (int a) -> System.out.println("Stock Value " + a);
+
+		stock.getValue(10); //param
+
+	}
+}
+
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Stock {
+	void getValue(int a);
+}
+
+public class ParamsAndArgs {
+	public static void main(String[] args) {
+
+		Stock stock = null;
+
+		// args
+		stock = (int a) -> System.out.println("Stock Value " + a);
+
+		stock.getValue(10); // param
+
+		// type inference ; Arg type is understand based on parameter value
+
+		stock = (a) -> System.out.println("Stock Value " + a);
+
+		stock.getValue(30); // param
+
+		// if arg is single variable, you can omit () as welcome
+		stock = a -> System.out.println("Stock Value " + a);
+
+		stock.getValue(30); // param
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Return values:
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Inventory {
+	int getStockValue();
+}
+
+@FunctionalInterface
+interface Product {
+	int getQty(int qty);
+}
+
+public class LambdaReturnValues {
+	public static void main(String[] args) {
+
+		Inventory inv = null;
+		inv = () -> {
+			return 100;
+		};
+		System.out.println(inv.getStockValue());
+
+		// nomore body only return statement:drop {}
+		inv = () -> 100;
+		System.out.println(inv.getStockValue());
+
+		Product product = null;
+		product = (int qty) -> {
+			return qty;
+		};
+		System.out.println("Qty : " + product.getQty(10));
+
+		// Args can be type inferenced
+		product = (qty) -> {
+			return qty;
+		};
+		System.out.println("Qty : " + product.getQty(10));
+		// if arg is single drop ()
+		product = qty -> {
+			return qty;
+		};
+		System.out.println("Qty : " + product.getQty(10));
+		// only one return statement : drop {} and return statement
+		product = qty -> qty;
+		System.out.println("Qty : " + product.getQty(10));
+
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+How to pass functions as Parameter?
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Handler {
+	void handle();
+}
+
+@FunctionalInterface
+interface AsyncHandler {
+	void handle(String connectionString);
+}
+
+class Connector {
+	public void connect(Handler handler) {
+		// call Hanlder handle mehtod
+		handler.handle();
+	}
+
+	public void asynConnect(AsyncHandler handler) {
+		handler.handle("host:localhost,port:8080");
+	}
+}
+
+@FunctionalInterface
+interface Resolver {
+	void resolve(String message);
+}
+
+@FunctionalInterface
+interface Rejection {
+	void reject(String err);
+}
+
+class HttpServer {
+	public void connect(Resolver resolver, Rejection rejection) {
+		boolean isConnected = true;
+		if (isConnected) {
+			resolver.resolve("Http Server Connected : 200 ");
+		} else {
+			rejection.reject("Server Connection failed : 500");
+		}
+
+	}
+}
+
+public class MethodsAsParameter {
+	public static void main(String[] args) {
+
+		Connector connector = new Connector();
+		// Passing implementation of interface as "method parameter inner class"
+		connector.connect(new Handler() {
+
+			@Override
+			public void handle() {
+				System.out.println("Connection is Ready!");
+			}
+		});
+		// Lambda
+		connector.connect(() -> {
+			System.out.println("HTTP Connection is Ready");
+		});
+		connector.asynConnect(connectionInfo -> {
+			System.out.println(connectionInfo);
+		});
+		//
+		HttpServer http = new HttpServer();
+		http.connect(r -> System.out.println(r), err -> System.out.println(err));
+
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Java Lambda Expressions #3 - Variable Capture
+
+
+package com.unisys.fp;
+
+@FunctionalInterface
+interface Variable {
+	void doIt();
+}
+
+public class VariableCaptureDemo {
+
+	private int counter;
+
+	// capaturing instance variables inside lambda
+	public void increment() {
+		Variable variable = () -> {
+			System.out.println(++counter);
+		};
+		variable.doIt();
+	}
+
+	public static void main(String[] args) {
+		new VariableCaptureDemo().increment();
+		// Capaturing local variables inside lambda
+		String name = "Subramanian";
+		Variable variable = () -> {
+			System.out.println(name);
+		};
+		variable.doIt();
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Method References:
+
+package com.unisys.fp;
+//passing instance method /static method as parameter to lambda
+
+//interface takes input prints the same
+@FunctionalInterface
+interface Printer {
+	void print(String var);
+}
+
+class MicroTaskExecutor {
+
+	public static void startMicroTask() {
+		for (int i = 0; i < 3; i++) {
+			System.out.println(MicroTaskExecutor.class.getName() + "" + i);
+		}
+	}
+}
+
+class Loop {
+
+	private void startMicroTask() {
+		for (int i = 0; i < 5; i++) {
+			System.out.println("micro task thread -" + i);
+		}
+	}
+
+	public void startLoop() {
+		Thread thread = null;
+		thread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 5; i++) {
+					System.out.println("thread-" + i);
+				}
+			}
+		});
+		thread.start();
+		// lambda
+		thread = new Thread(() -> {
+			for (int i = 0; i < 5; i++) {
+				System.out.println("thread-" + i);
+			}
+		});
+		thread.start();
+		// passing method as parameter
+		thread = new Thread(() -> startMicroTask());
+		thread.start();
+		// passing method as parameter using : methodreference
+		// this::methodName
+		thread = new Thread(this::startMicroTask);
+		thread.start();
+		// Passing method from util class
+		// methodReference className::methodName
+		thread = new Thread(MicroTaskExecutor::startMicroTask);
+		thread.start();
+
+	}
+
+}
+
+public class MethodReferences {
+	public static void main(String[] args) {
+		Loop loop = new Loop();
+		loop.startLoop();
+		// How to simplfify taking input and print same
+
+		Printer printer = null;
+		printer = name -> {
+			System.out.println(name);
+		};
+		printer.print("Subramanian");
+		// using method referecence
+		printer = System.out::println;
+		printer.print("Geetha");
+
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+I want to implement functional programming, i need functional interface but most the time
+i may use like single input,output the same, two input , return the same .
+
+for that use cases i need not maintain my own interfaces, java provides built in interfaces
+for most of the use cases.
+
+
+Why / Advantages of built in interfaces:
+1.if you dont want to have your own functional interfaces for common tasks.
+
+Java Provides lot of in built functional interfaces in the package 
+java.util.function
+
+Important functional interfaces:
+...............................
+1.Consumer
+2.Predicate
+3.Supplier
+4.UnarOperator
+5.BinaryOperator
+6.Function
+
+	        nothing->T            Supplier
+		T->nothing            Consumer
+		T->T                  UnaryOperator
+		T,T->T                BinaryOperator
+		S->T                  Function
+		T->boolean            Predicate 
+
+
+1.Consumer
+  Represents an operation that accepts a single input argument and returns no result
+package com.unisys.fp;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+
+public class BuiltinFunctionalInterfaces {
+	public static void main(String[] args) {
+
+		Consumer<String> consumer = null;
+		consumer = new Consumer<String>() {
+			@Override
+			public void accept(String t) {
+				System.out.println(t);
+
+			}
+		};
+		consumer.accept("Hello");
+		consumer = t -> System.out.println(t);
+		consumer.accept("Hai");
+		consumer = System.out::println;
+		consumer.accept("Welcome");
+		// consumer interface in list iteration
+		List<String> names = Arrays.asList("Ram", "Subramanian", "Divya");
+		names.forEach(name -> System.out.println(name));
+		names.forEach(System.out::println);
+
+
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+                       Reactive Programming and implementation
+
+What is Reactive?
+
+	The Oxford dictionary defines reactive as “showing a response to a stimulus.”
+
+Response: The Result 
+Stimulus : trigger /actions : Events
+
+So, reactive software reacts and adapts its behavior based on the stimuli it receives.
+
+However, the responsiveness and adaptability promoted by this definition are programming challenges because the flow of computation isn’t controlled by the programmer but by
+the stimuli.
+
+
+
+What is Reactive Programming?
+ 
+It is one of the Programming Paradigm.
+
+It is hybrid Programming paradigm.
+ 
+ReactiveProgramming = Observable Design Pattern + Iterator Design Pattern + Functional Programming principles + Event Driven Programming + Pull based Programming.
+
+
+The reactive programming paradigm is often presented in object-oriented languages 
+   as an extension of the "Observer design pattern".
+
+Observer Design Pattern implementation:
+
+There are one to many relationship among objects
+
+There are one to many relationship among objects
+
+                          Owner/Subject/Producer
+				 |
+			         |
+				 |
+			Event Notification Interface
+				 |
+		-------------------------------------------------	
+		|           	|               |         |
+       Listeners               Listners      Listeners  Listeners
+       subscribers 1..N
+
+
+How do they communicate?
+  By passing messages via method calls with intermediate object(Event)
+      
+Owner sends "stimuls/events" via notification interface to Listeners/Subscribers
+
+Subscribers are notificated for an event, based on that event who will "react/respond"
+
+Note: Reactive Programm extended with "Observer design pattern"  with more "events"
+
+In general event always related to data : "Data Events".
+
+
+Legacy "Observer design pattern" missed other events
+
+  ->Errors : how to notify to subscribers incase some thing went wrong for "Producer"
+  ->Completed : how to to notify the subscribes that "process" completed by "Producer".
+
+
+****************************************************************************************
+
+Iterator:
+Iterator Design Pattern:
+
+Pull Based and Push Based Programming:
+.....................................
+
+Pull Based: Iterator based
+
+                                  Data Source(Array /List)
+                                   (1,2,3,4,5,6,7,8,9,10)   Object
+
+					 |
+					
+				Pull 1,Pull 2, Pull 3, Pull N....
+							          
+			   Iterator : Wrapper around for loop: Iterator Object
+				   for-loop
+			           for..in loop
+	   
+			
+
+1.Stream emits items when consumer requests only
+
+
+Iterator emits
+ -Only data via iterator.next call
+ -Errors via try...catch
+ -No complete
+
+Push Based Model:
+.................
+			         Data Source(Array /List)
+                                   (1,2,3,4,5,6,7,8,9,10)   Object
+				 	
+				   1   2    3    4
+				  push push push push
+				 ---------------------------------
+                       	  Stream      1  2  3 4 5 .... |
+				 ----------------------------------
+					| |        | |        |  | 
+					| |        | |        |  | =>Event Channel
+				    Data Event	 Error Event  Completed Event
+
+
+				Subscriber/Listener
+
+
+In reactive streams, the equivalent of the above pair is Publisher-Subscriber. But it is the Publisher that notifies the Subscriber of newly available values as they come, and this push aspect is the key to being reactive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+         
