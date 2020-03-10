@@ -1136,7 +1136,7 @@ It is one of the Programming Paradigm.
 
 It is hybrid Programming paradigm.
  
-ReactiveProgramming = Observable Design Pattern + Iterator Design Pattern + Functional Programming principles + Event Driven Programming + Pull based Programming.
+ReactiveProgramming = Observable Design Pattern + Iterator Design Pattern + Functional Programming principles + Event Driven Programming + Push based Programming.
 
 
 The reactive programming paradigm is often presented in object-oriented languages 
@@ -1229,17 +1229,436 @@ Push Based Model:
 
 In reactive streams, the equivalent of the above pair is Publisher-Subscriber. But it is the Publisher that notifies the Subscriber of newly available values as they come, and this push aspect is the key to being reactive
 
+*********************************************************************************************
+
+
+3 .Reactive Programs are functional style based.
+
+ if you want to process data streams, we need function style programming
+ 
+ -Pure functions
+ -Immutablity
+ -Higher order functions: function composition
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+                                       Streams 
+   -----------------------------------------------------------------------------------------
+
+What is Stream?
+
+    Flow of data over period of time , from producer to consumer via "Event Channels".
+    
+    Stream is a Channel through which you send data.
+       Data could be
+                   Domain data
+		   Error data
+                   
+
+Why Reactive Programming  / Applications of Reactive Programming:
+.................................................................
+
+                            "Data Processing"
+
+ if you have large set of data, you dont want to load all the data in memory , you want to stream the data while streaming you want to process the data,consume processed data.
+
+
+Types of Streams:
+
+
+1.Up Stream
+
+2.Down Stream
+
+
+What is Reactive system? Reactive System specification:
+.......................................................
+
+Reactive Programming is more popular now a days. But when reactive programming came there was no standard body , to ensure /certify that the System is "fully Reactive".
+
+
+To measure the system , what we have built, or going to build "Is Reactive".
+
+The Specification was pubilshed in a web site.https://www.reactivemanifesto.org/
+
+
+Principles:
+
+1.Responsive:
+  All Reactive systems  should respond Properly with respect to data,errors,completed.
+
+
+2.Resilient: The ability to handle failure and recover
+
+The system stays responsive in the face of failure. This applies not only to highly-available, mission-critical systems
+
+
+3.Elastic: The ability to scale horizontally (scale out/in)
+
+  The system stays responsive under varying workload. Reactive Systems can react to changes in the input rate by increasing or decreasing the resources allocated to service these inputs.
+
+
+4.Message Driven:
+
+	Reactive Systems rely on asynchronous message-passing to establish a boundary between components that ensures loose coupling, isolation and location transparency.
+........................................................................................
+
+                       Reactive Programming Implemenation
 
 
 
+No Separate Reactive Programming language exists
+
+Languages extends Reactive Programming principels via "Extensions/Plugins"
+
+                    "ReactiveX"
+
+Languages
+	Java: RxJava
+	JavaScript: RxJS
+	C#: Rx.NET
+	C#(Unity): UniRx
+	Scala: RxScala
+	Clojure: RxClojure
+	C++: RxCpp
+	Lua: RxLua
+	Ruby: Rx.rb
+	Python: RxPY
+	Go: RxGo
+	Groovy: RxGroovy
+	JRuby: RxJRuby
+	Kotlin: RxKotlin
+	Swift: RxSwift
+	PHP: RxPHP
+	Elixir: reaxive
+	Dart: RxDart
+
+ReactiveX for platforms and frameworks
+	RxNetty
+	RxAndroid
+	RxCocoa
+        Project Reactor
 
 
 
+ReactivX : Extension lib provides Reactive Programming
+
+As a first step in the direction of reactive programming, Microsoft created the Reactive Extensions (Rx) library in the .NET ecosystem. 
+
+Then RxJava implemented reactive programming on the JVM. As time went on, a standardization for Java emerged through the Reactive Streams effort, a specification that defines a set of interfaces and interaction rules for reactive libraries on the JVM.
+/////////////////////////////////////////////////////////////////////////////////////////////
+Lets Code:
+..........
+
+Project Setup:
+
+1.Create Maven Project
+
+ 
+pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.unisys</groupId>
+	<artifactId>javafpapp</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<dependencies>
+		<!-- https://mvnrepository.com/artifact/io.reactivex.rxjava2/rxjava -->
+		<dependency>
+			<groupId>io.reactivex.rxjava2</groupId>
+			<artifactId>rxjava</artifactId>
+			<version>2.2.18</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.reactivestreams/reactive-streams -->
+		<dependency>
+			<groupId>org.reactivestreams</groupId>
+			<artifactId>reactive-streams</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+
+	</dependencies>
+</project>
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+Rxjava Api Overview:
+
+
+Objects:
+
+1.Observable
+2.Single
+3.Subject
+4.Scheduler
+
+Apis(Methods):Pure functions,Which is based builder design pattern.
+
+1.Operators
+   Operators are technically methods/functions in reactive programming.
+
+
+Observable:
+
+ To Represent Stream.
+
+
+Operators are classified based on usage
+
+1.Creating Observables
+
+   Creating Stream Objects based on factory design pattern.that means Objects are created
+by factory apis.
+
+   create:
+	create an Observable from scratch by calling observer methods programmatically
+
+   interval:
+	Create Stream , which emits data based cpu clock.
+
+2.Transforming Observables
+
+   Converts source Stream(up Stream) into down stream after applying transformation.
+
+   map
+
+3.Filtering Observables
+
+   Works based on "Prdicate" -booleans 
+
+4.Combining Observables
+   
+   Merging many streams into single streams
+
+   Zip
+
+5.Error handling
+
+  try
+  Retry
+
+6.Observable Utility Operators
+
+
+7.Conditional and Boolean Operators
+
+8.Mathematical and Aggregate Operators
+
+9.Backpressure Operators
+
+10.Connectable Observable Operators
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+Create Stream,emit data,complete:
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class GreeterObservable {
+	public static void main(String[] args) {
+
+		// create Stream from scratch
+		Observable<String> stream = Observable.create(source -> {
+			// Pushing Data into Stream
+			source.onNext("Subramanian");
+			source.onNext("Geetha");
+			source.onNext("John");
+			source.onNext("Arun");
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		});
+
+		// Subscribe the Stream : Three channels are ready now to get data,error,comple
+
+//		stream.subscribe(data -> {
+//			System.out.println(data);
+//		}, err -> {
+//			System.out.println(err);
+//		}, () -> {
+//			System.out.println("Stream done!");
+//		});
+		stream.subscribe(System.out::println, 
+				System.out::println, () -> System.out.println("Stream done"));
+
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Use Builder Pattern:
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class NameStream {
+	public static void main(String[] args) {
+
+		// create Stream from scratch
+		Observable.create(source -> {
+			// Pushing Data into Stream
+			source.onNext("Subramanian");
+			source.onNext("Geetha");
+			source.onNext("John");
+			source.onNext("Arun");
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		}).subscribe(System.out::println, System.out::println, () -> System.out.println("Stream done"));
+
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+How to push Error?
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class LoginStream {
+	public static void main(String[] args) {
+		// create Stream from scratch
+		Observable.create(source -> {
+
+			// biz logic
+			String userName = "admin";
+			String password = "adminxx";
+			if (userName.equals(userName) && password.equals("admin")) {
+				source.onNext("Login Success");
+			} else {
+				source.onError(new Exception("Login failed"));
+			}
+
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		}).subscribe(System.out::println, System.out::println, () -> System.out.println("Stream done"));
+
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+How to push sequence of numbers?
 
 
 
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class SequenceStream {
+	public static void main(String[] args) {
+		// create Stream from scratch
+		Observable.create(source -> {
+
+			for (int i = 0; i < 10; i++) {
+				source.onNext(i);
+			}
+
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		}).subscribe(System.out::println, System.out::println, () -> System.out.println("Stream done"));
+
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+How to transform items from one stream into another?
+How to create upstream and downstream?
+
+operator: map : transform each item into another item from source stream, will create down stream.
+
+Use case: Multiply each item by 2.
 
 
+up stream   ----1----2-----3----4-----5--|->
+ 	     map
+  
+down stream ----2----4-----6----8-----10--|->
+
+            .subscribe
+
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class StreamTransformationUsingMap {
+
+	public static void main(String[] args) {
+		// create Stream from scratch
+		Observable<Integer> stream = Observable.create(source -> {
+
+			for (int i = 0; i < 10; i++) {
+				source.onNext(i);
+			}
+
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		});
+		stream.map(i -> i * 2).subscribe(System.out::println, System.out::println,
+				() -> System.out.println("Stream done"));
+
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+How to apply pridcate api: boolean expression
+
+How to transform items from one stream into another and filter items?
+
+
+operator: map,filter : transform each item into another item from source stream, will create down stream,filter and create
+
+Use case: Multiply each item by 2.
+
+
+
+up stream   ----1----2-----3----4-----5--|->
+ 	     map
+  
+down stream ----2----4-----6----8-----10--|->
+
+            filter
+
+down stream-------------------------------
+
+            .subscribe
+
+
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class MapFilterStream {
+	public static void main(String[] args) {
+
+		// create Stream from scratch
+		Observable<Integer> stream = Observable.create(source -> {
+
+			for (int i = 0; i < 10; i++) {
+				source.onNext(i);
+			}
+
+			// im thinking i need to inform subscribe stream over
+			source.onComplete();
+
+		});
+		stream
+		.map(i -> i * 3)
+		.filter(i -> i % 2 == 0)
+		.subscribe(System.out::println, System.out::println,
+				() -> System.out.println("Stream done"));
+
+	}
+}
 
 
 
