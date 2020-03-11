@@ -1659,26 +1659,831 @@ public class MapFilterStream {
 
 	}
 }
+//////////////////////////////////////////////////////////////////////////////////////////////
+How to create Stream from operators(factory methods)?
+package com.unisys.streams;
+
+package com.unisys.streams;
+
+import java.util.Arrays;
+import java.util.List;
+
+import io.reactivex.Observable;
+
+class Employee {
+	private int id;
+	private String name;
+
+	public Employee() {
+		// TODO Auto-generated constructor stub
+	}
+
+	public Employee(int id, String name) {
+		super();
+		this.id = id;
+		this.name = name;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "Employee [id=" + id + ", name=" + name + "]";
+	}
+
+}
+
+public class FactoryApiObservable {
+	public static void main(String[] args) {
+
+		Observable stream = null;
+		// Just : sequence of values
+		stream = Observable.just("Subramanian", "Ram", "Karthik", "Divya Sree");
+		stream.subscribe(System.out::println, System.out::println, () -> System.out.println("done!"));
+
+		// Array of elements : Array as datasource
+		String[] names = { "A", "B", "C", "D", "C", "E" };
+		// fromArray : convert array into Stream
+		stream = Observable.fromArray(names);
+		stream.subscribe(System.out::println, System.out::println, () -> System.out.println("done!"));
+
+		Employee[] employees = { new Employee(1, "A1"), new Employee(2, "A2"), new Employee(3, "A3") };
+		stream = Observable.fromArray(employees);
+		stream.subscribe(System.out::println, System.out::println, () -> System.out.println("done!"));
+
+		// List of elements : List as data Source
+		List<String> nameList = Arrays.asList(names);
+		stream = Observable.fromIterable(nameList);
+		stream.subscribe(System.out::println, System.out::println, () -> System.out.println("done!"));
+		List<Employee> empList = Arrays.asList(employees);
+		stream = Observable.fromIterable(empList);
+		stream.subscribe(System.out::println, System.out::println, () -> System.out.println("done!"));
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+Broad casting:
+.............
+
+Producer(Stream)-----can be connected with ---one Subscriber : one to one
+  This communication style is called "unicast".
+
+Producer(Stream)----can be connected with ----->many subscribers : one to Many
+  This communication style is called "Multicast".
+
+Based on this communication style stream can be classified into two category.
+
+1.Cold Observable(Cold Stream)
+2.Hot Observable(Hot Stream)
+
+1.Cold Observable
+
+1.Observable that doesn’t emit items until a subscriber subscribes.
+2.If we have more than one subscriber, then observable will 
+emit sequence of items to all subscribers one by one.
+3.Each subscriber get fresh copy of the data from the begining.
+4.Most of Observerables are Cold.
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+
+public class ColdStream {
+
+	public static void main(String[] args) throws InterruptedException {
+
+		Observable<Integer> coldStream = Observable.create(subscriber -> {
+			for (int i = 0; i <= 5; i++) {
+				subscriber.onNext(i);
+			}
+			subscriber.onComplete();
+		});
+		// Subscriber : 1
+		coldStream.subscribe(
+				data -> System.out.println(" Subramanian's : " + data + " who is running in "
+						+ Thread.currentThread().getName() + " thread"),
+				System.out::println, () -> System.out.println("Subramanian done"));
+
+		coldStream.subscribe(
+				data -> System.out.println(
+						" James " + data + " who is running in " + Thread.currentThread().getName() + " thread"),
+				System.out::println, () -> System.out.println("James done"));
+		Thread.sleep(5000);
+
+		coldStream.subscribe(
+				data -> System.out.println(
+						" Geetha's " + data + " who is running in " + Thread.currentThread().getName() + " thread"),
+				System.out::println, () -> System.out.println("Geetha done"));
+
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+Hot Observable:
+
+1.Observables that don’t wait for any subscription. They start emitting items   when created.
+2.They don’t emit the sequence of items again for a new subscriber.
+3.When an item is emitted by hot observable, all the subscribers that are   subscribed will get the emitted item at once.
 
 
 
+There are many ways to implement hot observables:
+
+1.ConnectableObservable
+2.Subjects
+
+1.ConnectableObservable:
+  A ConnectableObservable is a single observable source for different observers.
+
+A ConnectableObservable is a single observable source for different observers. The main difference aside from being a single observable source is that calling subscribe on a ConnectableObserver will not trigger emission, but connect will.
 
 
 
+package com.unisys.streams;
+
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.observables.ConnectableObservable;
+
+public class HotStreamUsingConnectable {
+	public static void main(String[] args) throws InterruptedException {
+
+		// create Hold Stream
+		Observable<Integer> coldstream = Observable.create(subscriber -> {
+			for (int i = 0; i < 50; i++) {
+				subscriber.onNext(i);
+			}
+		}); // Create Connectable Observable : Convert cold to Hot
+		ConnectableObservable connectableObservable = coldstream.publish();
+
+		System.out.println("Streaming begins");
+		connectableObservable.subscribe(data -> {
+			System.out.println("Subramanian : " + data);
+		});
+		connectableObservable.subscribe(data -> {
+			System.out.println("Ram :  " + data);
+		});
+
+		Thread.sleep(50);
+		connectableObservable.subscribe(data -> {
+			System.out.println("................");
+
+			System.out.println("John :  " + data);
+		});
+
+		connectableObservable.connect();
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////
+
+How to unsubscribe from the streaming?
+
+Interval.
+
+package com.unisys.streams;
+
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observables.ConnectableObservable;
+
+public class HotWithUnSubscription {
+	public static void main(String[] args) throws InterruptedException {
+
+		// Cold Stream
+		Observable<Long> coldStream = Observable.interval(1, TimeUnit.SECONDS);
+		// HotStream
+		Observable<Long> hotObservable = coldStream.publish().refCount();
+
+		// Get the Reference of Disposable so that i can close the stream
+
+		Disposable subu = hotObservable.doOnSubscribe(d -> System.out.println("Subramanian joined"))
+				.doFinally(() -> System.out.println("Subramanian left"))
+				.subscribe(item -> System.out.println("Subramanian Got Item : " + item));
+		Thread.sleep(5000);
+
+		Disposable ram = hotObservable.doOnSubscribe(d -> System.out.println("Ram joined"))
+				.doFinally(() -> System.out.println("Ram left"))
+				.subscribe(item -> System.out.println("Ram Got Item : " + item));
+
+		Thread.sleep(3000);
+		// ram wants to leave the stream
+		ram.dispose();
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Subjects:
+.........
+
+ - create the hot observable from scratch
+
+Types of Subjects:
+
+1.AsyncSubject 
+..............
+ A.AsyncSubject will emit only the last value to its subscribers when source observable completes.
+B.AsyncSubject will get all the items emitted by source observable but only emit the last item when source observable calls its onCompleted method.
+
+
+package com.unisys.streams;
+
+import io.reactivex.Observable;
+import io.reactivex.subjects.AsyncSubject;
+
+public class AsyncSubjectStream {
+	public static void main(String[] args) {
+
+		// Source Stream
+		Observable<Integer> sourceStream = Observable.create(subscriber -> {
+			for (int i = 0; i <= 20; i++) {
+				subscriber.onNext(i);
+			}
+			subscriber.onComplete();
+		});
+		// Create Async Subject
+		// AsyncSubject
+		AsyncSubject<Integer> asyncSubject = AsyncSubject.create();
+		// bind subject with source
+		sourceStream.subscribe(asyncSubject);
+
+		asyncSubject.subscribe(data -> {
+			System.out.println("Subu's AsyncSubject Subject :" + data);
+		}, err -> {
+			System.out.println(err);
+		}, () -> {
+			System.out.println("Done!");
+		});
+
+		asyncSubject.subscribe(data -> {
+			System.out.println("Ram's AsyncSubject Subject :" + data);
+		}, err -> {
+			System.out.println(err);
+		}, () -> {
+			System.out.println("Done!");
+		});
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+2.BehaviourSubject:
+ 
+ BehaviourSubject emits the most recently item at the time of subscription or
+ a default item if none has been emitted and then continues the sequence until complete.
+
+
+package com.unisys.streams;
+
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
+import io.reactivex.subjects.BehaviorSubject;
+
+public class BehaviourStream {
+
+	private static void addSomeDelay() {
+		try {
+			System.out.println("Wait for some seconds");
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		Observable<Long> coldb = Observable.interval(1000, TimeUnit.MILLISECONDS);
+		BehaviorSubject<Long> behaviorSubject = BehaviorSubject.create();
+		coldb.subscribe(behaviorSubject);
+		addSomeDelay();
+		behaviorSubject.subscribe(data -> {
+			System.out.println("Subu's BehaviorSubject Subject :" + data);
+		}, err -> {
+			System.out.println(err);
+		}, () -> {
+			System.out.println("Done!");
+		});
+		behaviorSubject.subscribe(data -> {
+			System.out.println("Ram's BehaviorSubject Subject :" + data);
+		}, err -> {
+			System.out.println(err);
+		}, () -> {
+			System.out.println("Done!");
+		});
+		addSomeDelay();
+
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Single:
+......
+RxJava (and its derivatives like RxGroovy & RxScala) has developed an Observable variant called “Single.”
+
+A Single is something like an Observable, but instead of emitting a series of values — anywhere from none at all to an infinite number — it always either emits one value or an error notification.
+
+1.Single is an observable that emits only a single item.
 
 
 
+Single.just("Hello World!").subscribe(System.out::println);
+		Single single=Single.create(source -> {
+			try {
+				if ("hello".equals("hello")) {
+					source.onSuccess("Hello");
+
+				} else {
+					throw new RuntimeException("some thing went wrong!");
+				}
+			} catch (RuntimeException e) {
+				source.onError(e);
+
+			}
+
+		});
+		single.subscribe(System.out::println, System.out::println);
+		single.subscribe(System.out::println, System.out::println);
+
+Maybe:
+
+Maybe is similar to Single . but special Singles
+
+only item: Maybe.just
+only completed single: Maybe.empty
+only error : Maybe.error
+
+///////////////////////////////////////////////////////////////////////////////////////
+Completable:
+
+Objective:
+
+only error
+only complete
+not data
+package com.unisys.streams;
+
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Completable;
+
+public class CompletableStream {
+	public static void main(String[] args) throws InterruptedException {
+
+		Completable.complete().subscribe(() -> System.out.println("done!"));
+		Thread.sleep(5000);
+
+		Completable.complete().delay(1000, TimeUnit.MICROSECONDS).subscribe(() -> System.out.println("Time out"));
+		Thread.sleep(5000);
+
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+..........................................................................................
+
+Reactive Streams:
+................
+
+Backpressure in RxJava comes into picture when you have an observable which emits items so fast that consumer can’t keep up with the flow leading to the existence of emitted but unconsumed items.
+
+How unconsumed items, which are emitted by observables but not consumed by subscribers, are managed and controlled is what backpressure strategy deals with
+
+Reactive Streams is an initiative to provide a standard for asynchronous stream processing with non-blocking back pressure.
+
+Since it requires system resources to handle backpressure, you need to choose right backpressure strategy that suits your requirement.
+
+
+How to implement backpressure:
+
+
+Back pressure Handling:
+
+ 1.Via Operators
+ 2.Via RXjava 2 /Java 9 Api Flowable===Observable
+    Observable non-back pressure stream
+    Flowable back-pressure powered stream.
+ 3.Via Project Reactor
+      ->Flux === Observable ====Flowable
 
 
 
+1.Via Operators:
+
+Most of the Flitering Operaors are back pressure managed operators
+
+ debounce,distinct,ElementAt,filter,first,ignoreElements,Last,sample,skip,skipLast,take,takeLast.
+
+During backpressure, items may be droped
+ drop operators: fliter
+ collecting operators: window,buffer
+
+Observable<Integer> observable = Observable.range(1, 200000).take(15);
+		observable.subscribe(s -> {
+			System.out.println("take first 15 " + s);
+		});
+
+
+Reactive Pull
+..............
+Above two strategies manage backpressure by dropping items, if your application need to process all the items emitted by source observable then you can’t use those strategies.
+
+In this scenario, using reactive pull strategy is the right choice. In reactive pull, subscriber requests required number of items from observable by calling request().
+
+In RxJava2, Flowable needs to be used to utilize reactive pull backpressure as observable in RxJava2 is non-backpressured.
+
+package com.unisys.streams;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+
+public class FlowableBackPressure {
+	public static void main(String[] args) {
+
+		// Back pressure implementation: via buffer,drop elements
+		Flowable<Integer> flowStream = Flowable.create(source -> {
+			for (int i = 0; i < 2000; i++) {
+
+				source.onNext(i);
+			}
+		}, BackpressureStrategy.BUFFER);// Buffers all onNext values until the downstream consumes it
+
+		flowStream.subscribe((i) -> System.out.println("Item Got :" + i), System.out::println);
+	}
+}
+
+Back Pressure with Hot : Hot Flowable : ConnectableFlowable
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Vertx and Reactive Programming:
+...............................
+
+Vertx is non blocking, reactive microservice applications.
+
+Can we use Reactive apis from rxjava2 directly inside Vertx?
+
+Yes!, but Vert.x provides Rx-ified (using RxJava) versions for most of its APIs 
+////////////////////////////////////////////////////////////////////////////////////////
+
+                        -------------Vertx--------------------
 
 
 
+Vertx is toolkit to build " Nonblocking/Async - Reactive - IO" Applications.
+
+What is IO?
+
+I - Input : read
+O - Output : write
+
+Types of IO:
+
+1.File System:DISK IO
+   
+2.Network IO
+3.IN Memomery
+4.Process IO : IPC
 
 
 
+1.File System:DISK IO
+ Read and write data from and to local disk 
+
+2.Network IO
+   Building Network Applications: network applications are powered by protocals.
+
+  TCP/IP,HTTP,HTTPS,UDP,SMTP.....
+
+3.IN Memory
+
+   Keeeping data in memory(ram): read and write.
+
+4.Process IO : IPC : Event Bus
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Core concepts of Vertx:
+
+Vertx Represents single Object called "Vertx Instance"
+
+io.vertx.core.Vertx
+Interface Vertx
+
+->The entry point into the Vert.x Core API.
 
 
+Vertx Instance is an Which through which only you can build Application.
+
+Vertx instance is Container Object /Context Object which contains all other objects and assets for application.
+
+How to create Vertx Instance?
+
+Vertx instance can be created using factory pattern
+ factory apis are  
+ A. vertx()
+ B. vertx(io.vertx.core.VertxOptions) 
+ C. clusteredVertx(io.vertx.core.VertxOptions, Handler)
+
+The api are static methods inside "Vertx interface".
+
+How to start vertx Programming:
+
+Create / Get Vertx Instance 
+............................
+
+Ways:
+1.create vertx instance via Vertx.vertx(); 
+
+static Vertx	vertx()
+  Creates a non clustered instance using default options.
+
+Vertx vertx = Vertx.vertx();
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.Vertx;
+
+public class FirstVertxInstance {
+	public static void main(String[] args) {
+
+		// Get the Vertx Instance
+		Vertx vertx = Vertx.vertx();
+
+	}
+}
+
+2.create/Get Vertx instance via Verticles
+
+What is verticle?
+
+Refer : Actor model theory
+   
+ Vertical is "Reference implementation of Actor Model".
+
+
+1.Verticles are chunks of code that get deployed and run by Vert.x. 
+
+2.Verticles can be written in any of the languages that Vert.x supports and a single application can include verticles written in multiple languages.
+
+3.You can think of a verticle as a bit like an actor in the Actor Model.
+
+4.An application would typically be composed of many verticle instances running in the same Vert.x instance at the same time.
+
+5. The different verticle instances communicate with each other by sending messages on the event bus.
+
+*********************************************************************************************
+Verticle,Vertx Relationship:
+...........................
+
+
+                        
+			Verticle <-----> Verticle <----> Verticles
+                                      Event Bus
+			---------------------------------
+				   Vertx Instance
+					|
+				       JVM
+
+
+
+Deployment: in
+
+   The process of Moving/installing Vertical on Vertx instance.
+
+
+How to  create simple Vertical, how to deploy them?
+
+Two ways
+
+1.through Launcher which can be configured in pom.xml
+
+  It is program, provided by vertx cli
+ 
+ >mvn compile vertx:run
+
+2.through Code.
+public class FirstVertxInstance {
+	public static void main(String[] args) {
+
+		// Get the Vertx Instance
+		Vertx vertx = Vertx.vertx();
+		vertx.deployVerticle("com.unisys.vertx.core.HelloWorldVerticle");
+
+	}
+}
+
+
+
+3.Deploying through vertx cli command:
+
+E:\Lab\Session\unisys\vertx-01\src\main\java\com\unisys\core>vertx run MyVerticle.java
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+My Verticle is started
+Succeeded in deploying verticle
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Async Wrapper implementations:
+
+io.vertx.core
+
+1.Future:
+
+Represents the result of an action that may, or may not, have occurred yet.
+
+       AsyncResult                          Handler  -super interface				
+       -----------------------------------------
+			  |
+			Future                       -Sub interface
+				  
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+
+public class BasicFutureVerticle extends AbstractVerticle {
+
+	// return the basic success future
+	private Future<Void> getEmptyFuture() {
+		Future future = Future.future();
+		// invoke async completion event
+		future.complete();
+		return future;
+	}
+
+	// return the basic success future with payload(data)
+	private Future<String> getDataFuture() {
+		Future future = Future.future();
+		// invoke async completion event
+		future.complete("Hello Future!!!");
+		return future;
+	}
+	// return the basic future with error
+
+	private Future<String> getError() {
+		Future future = Future.future();
+		// invoke async completion event
+		future.fail("Something went wrong!!!");
+		return future;
+	}
+
+	// Future biz logic
+	private Future<String> validate(String userName, String password) {
+		Future future = Future.future();
+		// biz logic
+		if (userName.equals("admin") && password.equals("admin")) {
+			future.complete("Login Successful : - " + userName);
+		} else {
+			future.fail("Login failed");
+		}
+
+		return future;
+	}
+
+	@Override
+	public void start() throws Exception {
+
+		Future future = null;
+		future = getEmptyFuture();
+		if (future.succeeded()) {
+			System.out.println("Future succesfully returned");
+		} else {
+			System.out.println("Future not Returned");
+		}
+		// data future
+		;
+		// Grab the result of async operation
+		getDataFuture().setHandler(new Handler<AsyncResult<String>>() {
+
+			@Override
+			public void handle(AsyncResult<String> event) {
+				// TODO Auto-generated method stub
+				if (event.succeeded()) {
+					System.out.println(event.result());
+				}
+			}
+		});
+		// java Lambda Syntax
+		getDataFuture().setHandler(h -> {
+			if (h.succeeded()) {
+				System.out.println(h.result());
+			}
+		});
+		getDataFuture().onSuccess(new Handler<String>() {
+
+			@Override
+			public void handle(String event) {
+				// TODO Auto-generated method stub
+				System.out.println(event);
+			}
+		});
+		getDataFuture().onSuccess(result -> System.out.println(result));
+		getDataFuture().onSuccess(System.out::println);
+		//////////////////
+		System.out.println("Error Handling");
+		getError().setHandler(h -> {
+			if (h.failed()) {
+				System.out.println(h.cause());
+			}
+		});
+		getError().onFailure(System.out::println);
+		// Validate
+		validate("admin", "admin").setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+		});
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+IS future is Async /Non blocking?
+.................................
+
+
+Future is not Async, but Future is Async Wrapper to handle async results(Success/failure).
+ 
+ Future is Object which wraps the Results :  Future is "Decorator Object"
+
+What could be async stuff in Vertx?
+ 
+1.Timers
+
+2.All IO apis
+  tcp/ip,http,udp,database client apis.....
+
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+
+public class TimerAsyncFutureVerticle extends AbstractVerticle {
+
+	private Future<String> blockingFuture() {
+		Future future = Future.future();
+		future.complete("Blocking future!!!");
+		return future;
+	}
+
+	// async api
+	private Future<String> delay(long time, String message) {
+		Future future = Future.future();
+		// trigger async call
+		vertx.setTimer(time, h -> {
+			future.complete(message);
+		});
+		return future;
+	}
+
+	@Override
+	public void start() throws Exception {
+
+		blockingFuture().setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+		});
+		delay(1000, "Hai-1000").setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+		});
+		blockingFuture().setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+		});
+
+		delay(5000, "Hello-5000").setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+
+		});
+		blockingFuture().setHandler(h -> {
+			String r = h.succeeded() ? h.result() : h.cause().toString();
+			System.out.println(r);
+		});
+	}
+}
 
 
 
