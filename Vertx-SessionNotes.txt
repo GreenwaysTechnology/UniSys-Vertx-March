@@ -2485,6 +2485,1301 @@ public class TimerAsyncFutureVerticle extends AbstractVerticle {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Nested Callbacks/callback chaining:
+
+ Handler function is called as callback.
+
+The out put of one callback is input to the another callback.
+
+	private Future<String> getUser() {
+		String fakeUser = "adminxxx";
+		Future future = Future.future();
+		if (fakeUser != null) {
+			future.complete(fakeUser);
+
+		} else {
+			future.fail("User Not Found");
+		}
+		return future;
+	}
+
+	private Future<String> login(String userName) {
+		Future future = Future.future();
+		// biz logic
+		if (userName.equals("admin")) {
+			future.complete("Login Success!");
+		} else {
+			future.fail("Login failed");
+		}
+		return future;
+	}
+
+	@Override
+	public void start() throws Exception {
+		// Nested Callback
+		getUser().setHandler(h -> {
+			if (h.succeeded()) {
+
+				// call nesting : call login method
+				login(h.result()).setHandler(lh -> {
+					if (lh.succeeded()) {
+						System.out.println(lh.result());
+					} else {
+						System.out.println(lh.cause());
+					}
+				});
+
+			} else {
+				System.out.println(h.cause());
+			}
+		});
+
+	}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+how to use Handler inside biz api itself.
+
+eg: raw java lambda syntax
+
+interface Handler{
+   void handle();
+}
+
+void getUser(Handler handle){
+  
+}
+
+getUser(h->{});
+
+To grab/get the Result(either success/failure) from the Method which is powered by "Future".
+...........................................................................................
+
+Way -1 : 
+  Declare Future,
+  write biz logic,
+  based on logic , future.complete or future.fail,
+  return future.
+
+private Future<String> getUser() {
+		String fakeUser = "adminxxx";
+		Future future = Future.future();
+		if (fakeUser != null) {
+			future.complete(fakeUser);
+
+		} else {
+			future.fail("User Not Found");
+		}
+		return future;
+	}
+
+How to invoke and get the Result?
+
+ call the method,
+ bind setHandler method
+ then grab the result.
+
+
+Way 2:
+
+ declare method
+ Pass "Handler<AsyncResult<T>> aHandler" as Arg to that method
+ write biz logic
+ handle success
+   aHandler.handle(Future.succeededFuture(fakeUser));
+   aHandler.handle(Future.failedFuture("No User found"));
+
+	
+	private void getUser(Handler<AsyncResult<String>> aHandler) {
+		String fakeUser = "admin";
+		if (fakeUser != null) {
+			aHandler.handle(Future.succeededFuture(fakeUser));
+		} else {
+			aHandler.handle(Future.failedFuture("No User found"));
+		}
+	}
+
+How to call, and get the result?
+
+ invoke method
+ while invocation, pass function as parameter
+ only grab the result.
+ proceed based on results.
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+
+public class CallbackNestedVertical extends AbstractVerticle {
+
+	
+	private void getUser(Handler<AsyncResult<String>> aHandler) {
+		String fakeUser = "admin";
+		if (fakeUser != null) {
+			aHandler.handle(Future.succeededFuture(fakeUser));
+		} else {
+			aHandler.handle(Future.failedFuture("No User found"));
+		}
+	}
+
+	private void login(String userName, Handler<AsyncResult<String>> aHandler) {
+
+		if (userName.equals("admin")) {
+
+			aHandler.handle(Future.succeededFuture("Login Success!"));
+
+		} else {
+			aHandler.handle(Future.failedFuture("Login failed"));
+		}
+	}
+
+	@Override
+	public void start() throws Exception {
+		getUser(ar -> {
+			if (ar.succeeded()) {
+				login(ar.result(), ar2 -> {
+					if (ar2.succeeded()) {
+						System.out.println(ar2.result());
+					} else {
+						System.out.println(ar2.cause());
+					}
+				});
+
+			} else {
+				System.out.println(ar.cause());
+				
+
+			}
+		});
+	}
+
+}
+
+Think: How to make the above async?
+
+
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+
+public class CallbackNestedVertical extends AbstractVerticle {
+
+	private void getUser(Handler<AsyncResult<String>> aHandler) {
+		String fakeUser = "admin";
+		if (fakeUser != null) {
+			vertx.setTimer(1000, th -> {
+				aHandler.handle(Future.succeededFuture(fakeUser));
+			});
+		} else {
+			vertx.setTimer(1000, th -> {
+				aHandler.handle(Future.failedFuture("No User found"));
+			});
+		}
+	}
+
+	private void login(String userName, Handler<AsyncResult<String>> aHandler) {
+
+		if (userName.equals("admin")) {
+
+			vertx.setTimer(5000, th -> {
+				aHandler.handle(Future.succeededFuture("Login Success!"));
+			});
+			
+
+		} else {
+
+			vertx.setTimer(1000, th -> {
+				aHandler.handle(Future.failedFuture("Login failed"));
+			});
+		}
+	}
+
+	@Override
+	public void start() throws Exception {
+		getUser(ar -> {
+			if (ar.succeeded()) {
+				login(ar.result(), ar2 -> {
+					if (ar2.succeeded()) {
+						System.out.println(ar2.result());
+					} else {
+						System.out.println(ar2.cause());
+					}
+				});
+
+			} else {
+				System.out.println(ar.cause());
+
+			}
+		});
+	}
+
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
+Callback chaining with Future.compose method
+
+Future.compose(handler).Future.compose(handler).setHandler(handler)
+
+
+callback hell:
+
+   foo.a(1, res1 -> {
+  if (res1.succeeded()) {
+    bar.b("abc", 1, res2 -> {
+      if (res.succeeded()) {
+         baz.c(res3 -> {
+           dosomething(res1, res2, res3, res4 -> {
+               // (...)
+           });
+         });
+      }
+    });
+  }
+});
+
+Questions regarding the above code
+
+1.The code is maintainable
+
+2.The code is Readable
+
+3.The code is Scaleable
+ 
+Ans:    No!.
+
+how to write better callback based async code?
+
+ Vertx offers compose method.
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+
+public class FutureComposeVerticle extends AbstractVerticle {
+
+	private Future<Void> prepareDataBase() {
+		System.out.println("Prepare Database...");
+		Future<Void> f = Future.future();
+		f.complete();
+		return f;
+	}
+
+	private Future<Void> startHttpServer() {
+		System.out.println("Start HTTP Server...");
+		Future<Void> f = Future.future();
+		f.complete();
+		return f;
+	}
+
+	private Future<String> sayHello(String name) {
+		Future<String> future = Future.future();
+		// mimic something that take times
+		vertx.setTimer(100, l -> future.complete("hello " + name));
+		return future;
+	}
+
+	private Future<String> sayWorld() {
+		Future<String> future = Future.future();
+		// mimic something that take times
+		vertx.setTimer(100, l -> future.complete("world"));
+		return future;
+	}
+
+	private Future<String> sayHello() {
+		return null;
+	}
+
+	private Future<String> getWorld() {
+		return null;
+	}
+
+	@Override
+	public void start() throws Exception {
+		// i want to startHttpServer once prepareDatabse is completed
+
+		// callback hell code
+		prepareDataBase().setHandler(h -> {
+			if (h.succeeded()) {
+				startHttpServer().setHandler(httpHandler -> {
+					if (httpHandler.succeeded()) {
+						System.out.println("Server is Up!");
+					}
+				});
+			}
+		});
+
+		// Refactored code
+		prepareDataBase().compose(handler -> startHttpServer()).setHandler(http -> {
+			if (http.succeeded()) {
+				System.out.println("Server is Up!");
+			}
+		});
+		/////////////////////////////////////
+		sayWorld().setHandler(world -> {
+			if (world.succeeded()) {
+				sayHello(world.result()).setHandler(hello -> {
+					System.out.println(hello.result());
+				});
+			}
+		});
+		
+		sayWorld().compose(m -> sayHello(m)).setHandler(hello -> {
+			System.out.println(hello.result());
+		});
+		sayWorld().compose(this::sayHello).setHandler(hello -> {
+			System.out.println(hello.result());
+		});
+
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Promise:
+
+ Future === Promise Both are same
+
+Then why Promise?
+
+Promise is genral impl of Async Wrapper in many languages.
+
+Future is something inspired from java "Futures".
+
+Vertx team wanted to refactor the code with very meaningfull abstraction, then they introduced Promises.
+
+Future uses Promises.
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+
+public class PromiseVerticle extends AbstractVerticle {
+
+	public Future<Void> getPromise() {
+		Promise promise = Promise.promise();
+		promise.complete();
+		return promise.future();
+	}
+
+	public Future<Void> getError() {
+		Promise promise = Promise.promise();
+		promise.fail("Something went wrong!");
+		return promise.future();
+	}
+
+	public Future<String> getMessage() {
+		Promise promise = Promise.promise();
+		promise.complete("Hello Promise!");
+		return promise.future();
+	}
+
+
+	@Override
+	public void start() throws Exception {
+		// Basic
+		// Future future = getPromise().future();
+		Future future = getPromise();
+		if (future.succeeded()) {
+			System.out.println("Promise success");
+		}
+		getMessage().setHandler(ar -> {
+			System.out.println(ar.result());
+		});
+
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+I have many promises/futures , i want to combine all, get final result.
+
+
+package com.unisys.vertx.core;
+
+import java.util.Arrays;
+import java.util.List;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+
+public class CompositFutureVerticle extends AbstractVerticle {
+
+	public Future<String> getUserName1() {
+		Promise promise = Promise.promise();
+		promise.complete("Ram");
+		return promise.future();
+	}
+
+	public Future<String> getUserName2() {
+		Promise promise = Promise.promise();
+		promise.complete("Subramanian");
+		return promise.future();
+	}
+
+	public Future<String> getUserName3() {
+		Promise promise = Promise.promise();
+		promise.complete("Karthik");
+		return promise.future();
+	}
+
+	@Override
+	public void start() throws Exception {
+		List<Future> futures = Arrays.asList(getUserName1(), getUserName2(), getUserName3());
+
+		CompositeFuture.all(futures).list().forEach(System.out::println);
+
+		CompositeFuture.all(futures).setHandler(handler -> {
+			handler.result().list().forEach(System.out::println);
+		});
+
+	}
+}
+//////////////************************///////////////////////////////////////////////////////
+
+Async IO Implmementations:
+
+1.DISK IO : File System IO
+
+
+Streams:
+
+ReadStream:
+ ReadStream is implemented by HttpClientResponse, DatagramSocket,
+ HttpClientRequest, HttpServerFileUpload, HttpServerRequest, MessageConsumer, 
+ NetSocket, WebSocket, TimeoutStream, AsyncFile.
+
+WriteStream
+  WriteStream is implemented by HttpClientRequest, HttpServerResponse WebSocket,
+  NetSocket, AsyncFile, and MessageProducer
+
+File System:
+
+1.The Vert.x FileSystem object provides many operations for manipulating the file system.
+
+2.There is one file system object per Vert.x instance, and you obtain it with fileSystem.
+
+3.A blocking and a non blocking version of each operation is provided.
+The non blocking versions take a handler which is called when the operation 
+completes or an error occurs.
+
+blocking io version
+
+   String data=filesystem.read()
+
+nonblock io version
+      
+   filesystem.read(Handler h);
+
+
+package com.unisys.vertx.core.io.fs;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
+
+class FileService {
+
+	static Vertx vertx = Vertx.vertx();
+
+	public static Future<String> read() {
+		Promise<String> promise = Promise.promise();
+
+		FileSystem file = vertx.fileSystem();
+		file.readFile("assets/hello.txt", fsHandler -> {
+			if (fsHandler.succeeded()) {
+				// System.out.println(fsHandler.result());
+				promise.complete(fsHandler.result().toString());
+			} else {
+				// System.out.println(fsHandler.cause());
+				promise.fail(fsHandler.cause());
+			}
+		});
+		return promise.future();
+	}
+
+	public void write() {
+		FileSystem file = vertx.fileSystem();
+		file.writeFile("assets/hello_copy.txt", Buffer.buffer("Welcome"), result -> {
+			if (result.succeeded()) {
+				System.out.println("File written");
+			} else {
+				System.err.println("Oh oh ..." + result.cause());
+			}
+		});
+		System.out.println("end");
+	}
+}
+
+public class FileIO extends AbstractVerticle {
+
+	@Override
+	public void start() throws Exception {
+
+		FileService.read().setHandler(h -> {
+			if (h.succeeded()) {
+				System.out.println(h.result());
+			} else {
+				System.out.println(h.cause());
+			}
+		});
+
+	}
+}
+/////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ Buffers:
+.......
+1.Verticles running in Vert.x often need to process blocks of data.
+2.For instance, data from an incoming HTTP request, data loaded from disk, or
+  data generated as response to an HTTP request etc. 
+3.Vert.x provides a Buffer interface (io.vertx.core.buffer.Buffer) to help you handle such
+  data blocks
+4.A Buffer in Vert.x can hold binary data
+5.As such a Buffer is similar to a byte array, except the Buffer can expand its capacity 
+  dynamically as you write data to it.
+
+Create Buffer:
+Buffer buffer = Buffer.buffer();
+
+Buffer buffer = Buffer.buffer();
+		buffer.appendString("Hello");
+		buffer.appendByte((byte) 127);
+		buffer.appendShort((short) 127);
+		buffer.appendInt(127);
+		buffer.appendLong(127);
+		buffer.appendFloat(127.0F);
+		buffer.appendDouble(127.0D);
+		System.out.println("buffer.length() = " + buffer.length());
+		for (int i = 0; i < buffer.length(); i += 4) {
+			System.out.println("int value at " + i + " is " + buffer.getInt(i));
+		}
+
+		byte[] bytes = new byte[] { 1, 3, 5 };
+		Buffer buff = Buffer.buffer(bytes);
+		for (int j = 0; j < buff.length(); j++) {
+			System.out.println(buff.getByte(j));
+		}
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+Json:
+class JSONHandler {
+
+	public void createJSON() {
+		JsonObject json = new JsonObject();
+		json.put("id", 1);
+		json.put("name", "Subramanian");
+		json.put("city", "Chennai");
+		
+		//COnvert JSON(Object) into string
+		System.out.println(json.encodePrettily());
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+How to run Blocking code inside NonBlocking code?
+
+
+vertx.excuteBlocking
+
+package com.unisys.vertx.core;
+
+import io.vertx.core.AbstractVerticle;
+
+public class ExcuteBlockingVerticle extends AbstractVerticle {
+
+	@Override
+	public void start() throws Exception {
+		vertx.<String>executeBlocking(blockingCodeHandler -> {
+			try {
+				System.out.println("Waiting in blocking mode!");
+				Thread.sleep(5000);
+			} catch (Exception ignore) {
+			}
+			String result = "xxxxx!";
+
+			blockingCodeHandler.complete(result);
+
+		}, resultHandler -> {
+			System.out.println("Blocking Opertion Completed!");
+			System.out.println(resultHandler.result());
+		});
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Web Programming:
+................
+
+How to build non blocking http applications on jvm(Vertx)?
+
+
+Vertx offers low level http api
+
+ vertx.createHttpServer()
+
+Objects in HTTP:
+
+1.HTTPServer
+  Which represents Socket Object : which is core
+
+2.HttpServerRequest
+    Which represent input stream from server point of view
+
+3.HttpServerResponse
+   Which is outputStream from server point of View
+
+Note: all objects are created by vertx , injects references to the application.
+
+
+Features of Core vertx.createHttpServer:
+........................................
+
+1.basic request -response handling only.
+
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
+
+public class HelloWorldServer extends AbstractVerticle {
+
+	int port = 3002;
+
+	@Override
+	public void start() throws Exception {
+
+		// configure webservers
+		HttpServerOptions options = new HttpServerOptions();
+		options.setPort(port);
+
+		HttpServer httpServer = vertx.createHttpServer(options);
+
+		// Handling Client Request
+		httpServer.requestHandler(request -> {
+			HttpServerResponse response = request.response();
+			response.end("<h1>Hello Vertx Web Server</h1>");
+		});
+
+		// Start the http Server
+//		httpServer.listen(port, listenHandler -> {
+//			if (listenHandler.succeeded()) {
+//				System.out.println("Server is Up : " + listenHandler.result());
+//			} else {
+//				System.out.println(listenHandler.cause());
+//			}
+//		});
+		httpServer.listen(listenHandler -> {
+			if (listenHandler.succeeded()) {
+				System.out.println("Server is Up : " + listenHandler.result());
+			} else {
+				System.out.println(listenHandler.cause());
+			}
+		});
+
+	}
+}
+///////
+HttpServer Options
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
+
+public class HttpServerOptionsVerticle extends AbstractVerticle {
+	int port = 3002;
+
+	@Override
+	public void start() throws Exception {
+
+		// configure webservers
+		HttpServerOptions options = new HttpServerOptions();
+		options.setPort(port);
+
+		HttpServer httpServer = vertx.createHttpServer(options);
+
+		// Handling Client Request
+		httpServer.requestHandler(req -> {
+			HttpServerResponse response = req.response();
+
+			System.out.println("Method : " + req.method());
+			System.out.println("Version : " + req.version());
+			System.out.println("Scheme : " + req.scheme());
+			System.out.println("Uri :" + req.uri());
+			System.out.println("Path :" + req.path());
+			System.out.println("Query String : " + req.query());
+			System.out.println("Host :" + req.host());
+			System.out.println(".....Headers..... ");
+			req.headers().forEach(System.out::println);
+			System.out.println();
+
+			response.end("<h1>Hello Vertx Web Server</h1>");
+		});
+
+		httpServer.listen(listenHandler -> {
+			if (listenHandler.succeeded()) {
+				System.out.println("Server is Up : " + listenHandler.result());
+			} else {
+				System.out.println(listenHandler.cause());
+			}
+		});
+
+	}
+
+}
+
+
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
+
+public class RequestBodyVerticle extends AbstractVerticle {
+	int port = 3002;
+
+	@Override
+	public void start() throws Exception {
+
+		// configure webservers
+		HttpServerOptions options = new HttpServerOptions();
+		options.setPort(port);
+
+		HttpServer httpServer = vertx.createHttpServer(options);
+
+		// Handling Client Request
+		httpServer.requestHandler(req -> {
+			HttpServerResponse response = req.response();
+
+			// read data from client
+			req.handler(chunk -> {
+				System.out.println(chunk.toString());
+			});
+
+			response.end("<h1>Hello Vertx Web Server</h1>");
+		});
+
+		httpServer.listen(listenHandler -> {
+			if (listenHandler.succeeded()) {
+				System.out.println("Server is Up : " + listenHandler.result());
+			} else {
+				System.out.println(listenHandler.cause());
+			}
+		});
+
+	}
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Build HTTP Client from Vertx, and server
+
+Server:
+
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpServer;
+
+public class GreeterService extends AbstractVerticle {
+
+	HttpServer server;
+
+	@Override
+	public void start() throws Exception {
+		server = vertx.createHttpServer();
+		// Request Handler
+		server.requestHandler(req -> {
+			System.out.println("Request is Received");
+			req.response().end("Welcome to Vertx");
+		});
+		// start the server
+
+		server.listen(8888, status -> {
+			String res = status.succeeded() ? "Http Server is Listening" : "Server Failed";
+			System.out.println(res);
+		});
+	}
+}
+
+Client
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
+
+public class HttpClientVerticle extends AbstractVerticle {
+	HttpClientOptions options;
+	HttpClient client;
+
+	@Override
+	public void start() throws Exception {
+		options = new HttpClientOptions();
+		client = vertx.createHttpClient(options);
+		// making request
+		//Way -1
+		client.getNow(8888, "localhost", "/", response -> {
+			System.out.println("Received response with status code " + response.statusCode());
+			response.bodyHandler(result -> {
+				System.out.println(result);
+			});
+		});
+        //way 2
+		client.request(HttpMethod.GET, 8888, "localhost", "/", response -> {
+			System.out.println("Received response with status code " + response.statusCode());
+			response.bodyHandler(result -> {
+				System.out.println(result);
+			});
+		}).end();
+        //way 3
+		client.get(8888, "localhost", "/", response -> {
+			System.out.println("Received response with status code " + response.statusCode());
+			response.bodyHandler(result -> {
+				System.out.println(result);
+			});
+		}).end();
+	}
+
+	@Override
+	public void stop() throws Exception {
+	}
+}
+
+Running:
+
+package com.unisys.vertx.core.web;
+
+import io.vertx.core.Vertx;
+
+public class MainWebApp {
+	public static void main(String[] args) {
+		Vertx vertx = Vertx.vertx();
+		vertx.deployVerticle(new GreeterService());
+		vertx.deployVerticle(new HttpClientVerticle());
+
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+How to build REST end points?
+
+The core httpserver module, may not be enough to handle clients requests based on 
+urls,methods
+
+/api/users/  -GET  --- Vertx ?
+
+package com.unisys.vertx.core.web.rest;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.Router;
+
+//DAO Class
+class BooksDAO {
+
+	MongoClient mongo;
+	public BooksDAO() {
+	}
+
+	BooksDAO(MongoClient mongo) {
+		System.out.println("BooksDAO initalized!");
+		this.mongo = mongo;
+	}
+
+	public Future<String> getBooks() {
+		Promise promise = Promise.promise();
+		mongo.find("books", new JsonObject(), lookup -> {
+			// error handling
+			if (lookup.failed()) {
+				promise.fail(lookup.cause());
+				return;
+			}
+			// now convert the list to a JsonArray because it will be easier to encode the
+			// final object as the response.
+			final JsonArray json = new JsonArray();
+			for (JsonObject o : lookup.result()) {
+				json.add(o);
+			}
+			promise.complete(json.encode());
+		});
+		return promise.future();
+
+	}
+}
+
+class BookEndPoint extends AbstractVerticle {
+
+	MongoClient mongo;
+	BooksDAO bookdao;
+
+	public BookEndPoint() {
+		// TODO Auto-generated constructor stub
+	}
+
+	public BookEndPoint(MongoClient mongo) {
+		// TODO Auto-generated constructor stub
+		this.mongo = mongo;
+		bookdao = new BooksDAO(mongo);
+	}
+
+	public Router getBooksApi() {
+		// /api/greeter /hello /hai /welcome /goodbye
+		// Creater Router Object
+		Router bookRouter = Router.router(vertx);
+
+		// EndPoints
+		bookRouter.get("/list").handler(ctx -> {
+
+			// Mongo code
+			bookdao.getBooks().setHandler(h -> {
+				// since we are producing json we should inform the browser of the correct
+				// content type.
+				ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+				// encode to json string
+				ctx.response().end(h.result());
+			});
+		});
+
+		return bookRouter;
+	}
+
+}
+
+//Greeter End
+
+class GreeterEndPoint extends AbstractVerticle {
+
+	public Router getGreeterApi() {
+		// /api/greeter /hello /hai /welcome /goodbye
+		// Creater Router Object
+		Router gapi = Router.router(vertx);
+
+		// EndPoints
+		gapi.route(HttpMethod.GET, "/hello").handler(routingctx -> {
+			routingctx.response().end("Hello");
+		});
+		gapi.get("/hai").handler(routingctx -> {
+			routingctx.response().end("Hai");
+		});
+
+		gapi.get("/goodbye").handler(routingctx -> {
+			routingctx.response().end("Goodbye");
+		});
+
+		return gapi;
+	}
+
+}
+
+public class FrontController extends AbstractVerticle {
+
+	HttpServer httpServer;
+	HttpServerOptions options;
+	MongoClient mongo;
+
+	@Override
+	public void start() throws Exception {
+		options = new HttpServerOptions();
+		options.setPort(3000);
+		options.setHost("localhost");
+		httpServer = vertx.createHttpServer(options);
+
+		// Create Mongo DB Connection
+		mongo = MongoClient.createShared(vertx, new JsonObject().put("db_name", "BooksDb"));
+
+		// Create Main router
+		Router mainRouter = Router.router(vertx);
+
+		mainRouter.mountSubRouter("/api/greeter", new GreeterEndPoint().getGreeterApi());
+
+		mainRouter.mountSubRouter("/api/messages", new GreeterEndPoint().getGreeterApi());
+
+		BookEndPoint bookapi = new BookEndPoint(mongo);
+		mainRouter.mountSubRouter("/api/books", bookapi.getBooksApi());
+
+		// binding router with routing context.
+		// httpServer.requestHandler(gapi::accept);
+		httpServer.requestHandler(mainRouter);
+
+		// Server start
+		httpServer.listen(myserver -> {
+			String res = myserver.succeeded() ? "Server is Listening @ " : "Server Failed";
+			System.out.println(res);
+		});
+	}
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+Distributed Programmng :
+
+
+How to send and receive message among verticles?
+
+ 
+Verticle is Object which is reference implementation of "Actor Model".
+ So they can exchange messages asyncly.
+
+
+Patterns :
+
+1.Single Vertx Instance , many Verticles
+
+
+            Verticle-1 Verticle-2  Verticle-3  Verticle-N
+                    
+              ------messages-----------------------------
+           ---------------------------------------------
+				|
+			  Vertx Instance
+
+				|
+			      JVM
+			
+
+
+Event Bus:
+
+
+Event bus is channel is used to communicate among verticles.
+Verticle can communicate each other by passing messages.
+Please Refer: Actor Model
+In Actor Model , actors are called objects communicate  each other via message patterns.
+
+The event bus forms a distributed peer-to-peer messaging system spanning multiple server nodes and multiple browsers.
+
+The event bus supports
+  publish/subscribe,
+  point-to-point, 
+  request-response messaging.
+
+
+pubblish - subscribe Model:
+
+Publish/subscribe messaging, or pub/sub messaging, is a form of 
+asynchronous service-to-service communication used in serverless and
+microservices architectures.
+
+In a pub/sub model, any message published to a topic is immediately
+received by all of the subscribers to the topic. 
+
+
+Pub/sub messaging can be used to enable event-driven architectures, or
+to decouple applications in order to increase performance, reliability and scalability.
+
+
+Actors
+
+1.sender
+
+package com.unisys.vertx.core.distributed;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.ext.web.Router;
+
+public class Sender extends AbstractVerticle {
+
+	@Override
+	public void start() throws Exception {
+		EventBus evBus = vertx.eventBus();
+		Router router = Router.router(vertx);
+		router.route("/hello").handler(ctx -> {
+			evBus.publish("news.uk.sport", "hello called");
+			ctx.response().end("done");
+
+		});
+
+		vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+
+		System.out.println("HTTP server started on port 8080");
+	}
+}
+
+
+2.Receiver
+
+package com.unisys.vertx.core.distributed;
+
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
+
+
+public class Receiver extends AbstractVerticle {
+	@Override
+	public void start() throws Exception {
+		System.out.println("Consumer is  Ready!");
+
+		EventBus eb = vertx.eventBus();
+		eb.consumer("news.uk.sport", message -> {
+		  System.out.println("I have received a message: " + message.body());
+		});
+	}
+}
+
+
+package com.unisys.vertx.core.distributed;
+
+import io.vertx.core.Vertx;
+
+public class Main {
+	public static void main(String[] args) {
+		Vertx vertx = Vertx.vertx();
+		vertx.deployVerticle(new Receiver());
+		vertx.deployVerticle(new Sender());
+	}
+
+}
+//////////////////////////////////////////////////////////////////////////////////////
+
+Scalablity :
+
+    Increasing /decrasing hardware or software resources.
+
+Types of Scablability:
+
+1.vertical
+   Hardware
+2.horzitontal
+  Software
+
+Horzitonal:
+
+->Clusters
+  We are going to scale vertx instances.
+
+
+How to make clusters?
+
+1.Through vertx cli utility
+
+>mvn compile vertx:run -Dvertx.runArgs="-cluster -instances 6 -Djava.net.preferIPv4Stack=true "
+>vertx run ClusterVertcle.java -cluster -instances 6 -Djava.net.preferIPv4Stack=true
+2.Through code
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+Service Discovery
+
+
+Service Discovery:
+
+In distributed systems, each components are individual and they are not aware of the location of other services, but if we want to invoke other services, we need to know their locations. Hardcoded in the code is not a good idea so we need a mechanism to record the location of each services dynamically -- that is service discovery.
+
+With service discovery, we can publish various kind of services to the discovery infrastructure and other components can consume registered services via discovery infrastructure. We don't need to know the location so it could let your components react smoothly to location or environment changes.
+
+
+Vert.x provides us a service discovery component to publish and discover various resources
+
+In Vert.x Service Discovery, services are described by a Record.
+
+io.vertx.servicediscovery.Record:
+
+Describes a `service`. The record is the only piece of information shared between consumer and provider. It should contains enough metadata to let consumer find the service they want.
+
+Service provider can publish services, and the Record can be saved in local map, distributed map or Redis depending on ServiceDiscoveryBackend. 
+
+
+ServiceDiscoveryBackend:
+Vert.x Discovery Backend - Zookeeper
+The service discovery has a plug-able backend using the ServiceDiscoveryBackend SPI. This is an implementation of the SPI based on Apache Zookeeper.
+
+Service consumer can retrieve service record from the discovery backend and get corresponding service instance. 
+
+ At present Vert.x provides out of box support of several service types such as event bus service(service proxy), HTTP endpoint, message source and data source. And of course we can create our own service types. We'll elaborate the usage of service discovery soon.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
